@@ -1,13 +1,90 @@
 <!DOCTYPE html>
-<html lang="">
-  <head>
+<html lang="en">
+<head>
     <meta charset="UTF-8">
-    <link rel="icon" href="/favicon.ico">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vite App</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.js"></script>
-  </body>
+    <title>Users App</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <h1>Добавить пользователя</h1>
+        <form @submit.prevent="addUser">
+            <div>
+                <label for="name">Имя:</label>
+                <input id="name" v-model="newUser.name" required>
+            </div>
+            <div>
+                <label for="age">Возраст:</label>
+                <input id="age" type="number" v-model.number="newUser.age" required>
+            </div>
+            <button type="submit">Добавить</button>
+        </form>
+
+        <h2>Список пользователей</h2>
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Имя</th>
+                    <th>Возраст</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="user in users" :key="user.id">
+                    <td>{{ user.id }}</td>
+                    <td>{{ user.name }}</td>
+                    <td>{{ user.age }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const users = ref([]);
+                const newUser = ref({
+                    name: '',
+                    age: null
+                });
+
+                const fetchUsers = async () => {
+                    try {
+                        const response = await axios.get('http://localhost:3000/users');
+                        users.value = response.data;
+                    } catch (error) {
+                        console.error('Ошибка при загрузке пользователей:', error);
+                    }
+                };
+
+                const addUser = async () => {
+                    try {
+                        await axios.post('http://localhost:3000/users', {
+                            name: newUser.value.name,
+                            age: newUser.value.age
+                        });
+                        
+                        newUser.value.name = '';
+                        newUser.value.age = null;
+                        
+                        await fetchUsers();
+                    } catch (error) {
+                        console.error('Ошибка при добавлении пользователя:', error);
+                    }
+                };
+
+                onMounted(fetchUsers);
+
+                return {
+                    users,
+                    newUser,
+                    addUser
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
 </html>
